@@ -1,26 +1,103 @@
-"""Abode switch device."""
+"""Abode light device."""
+import json
+import logging
+
+from abodepy.exceptions import AbodeException
 
 from abodepy.devices.switch import AbodeSwitch
 import abodepy.helpers.constants as CONST
+import abodepy.helpers.errors as ERROR
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AbodeLight(AbodeSwitch):
     """Class for lights (dimmers)."""
 
-    def set_color(self, _color):
-        """Set the color of the light."""
-        # Not implemented
-        return self.has_color
+    def set_color_temp(self, color_temp):
+        """Set device color."""
+        if self._json_state['control_url']:
+            url = CONST.INTEGRATIONS_URL + self._device_uuid
+
+            color_data = {
+                'action': 'setcolortemperature',
+                'colorTemperature': int(color_temp)
+            }
+
+            response = self._abode.send_request("post", url, data=color_data)
+            response_object = json.loads(response.text)
+
+            _LOGGER.debug("Set Color Temp Response: %s", response.text)
+
+            if response_object['idForPanel'] != self.device_id:
+                raise AbodeException((ERROR.SET_STATUS_DEV_ID))
+
+            if response_object['colorTemperature'] != int(color_temp):
+                _LOGGER.warning(
+                    ("Set color temp mismatch for device %s. "
+                     "Request val: %s, Response val: %s "),
+                    self.device_id, color_temp,
+                    response_object['colorTemperature'])
+
+            self.update(response_object)
+
+            _LOGGER.info("Set device %s color_temp to: %s",
+                         self.device_id, color_temp)
+            return True
+
+        return False
+
+    def set_color(self, color):
+        """Set device color."""
+        if self._json_state['control_url']:
+            url = CONST.INTEGRATIONS_URL + self._device_uuid
+
+            hue, saturation = color
+            color_data = {
+                'action': 'setcolor',
+                'hue': int(hue),
+                'saturation': int(saturation)
+            }
+
+            response = self._abode.send_request("post", url, data=color_data)
+            response_object = json.loads(response.text)
+
+            _LOGGER.debug("Set Color Response: %s", response.text)
+
+            if response_object['idForPanel'] != self.device_id:
+                raise AbodeException((ERROR.SET_STATUS_DEV_ID))
+
+            if (response_object['hue'] != int(hue) or
+                    response_object['saturation'] != int(saturation)):
+                _LOGGER.warning(
+                    ("Set color mismatch for device %s. "
+                     "Request val: %s, Response val: %s "),
+                    self.device_id, hue, response_object['hue'])
+
+            self.update(response_object)
+
+            _LOGGER.info("Set device %s hue to: %s", self.device_id, hue)
+
+            return True
+
+        return False
 
     @property
     def brightness(self):
         """Get light brightness."""
-        return self._json_state.get(CONST.BRIGHTNESS_KEY)
+        return self.get_value(CONST.STATUSES_KEY).get('level')
+
+    @property
+    def color_temp(self):
+        """Get light color temp."""
+        return self.get_value(CONST.STATUSES_KEY).get('color_temp')
 
     @property
     def color(self):
         """Get light color."""
-        return self._json_state.get(CONST.COLOR_KEY)
+        return (self.get_value(CONST.STATUSES_KEY).get('hue'),
+                self.get_value(CONST.STATUSES_KEY).get('saturation'))
 
     @property
     def has_brightness(self):
@@ -29,8 +106,16 @@ class AbodeLight(AbodeSwitch):
 
     @property
     def has_color(self):
-        """Device has color."""
-        return self.color is True
+        """Device is using color mode."""
+        if (self.get_value(CONST.STATUSES_KEY).get('color_mode')
+                == str(CONST.COLOR_MODE_ON)):
+            return True
+        return False
+
+    @property
+    def is_color_capable(self):
+        """Device is color compatible."""
+        return 'RGB' in self._type
 
     @property
     def is_dimmable(self):

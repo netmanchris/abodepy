@@ -2,7 +2,7 @@
 import os
 
 MAJOR_VERSION = 0
-MINOR_VERSION = 13
+MINOR_VERSION = 14
 PATCH_VERSION = '1'
 
 __version__ = '{}.{}.{}'.format(MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION)
@@ -50,7 +50,11 @@ BASE_URL = 'https://my.goabode.com/'
 LOGIN_URL = BASE_URL + 'api/auth2/login'
 LOGOUT_URL = BASE_URL + 'api/v1/logout'
 
+OAUTH_TOKEN_URL = BASE_URL + 'api/auth2/claims'
+
 PANEL_URL = BASE_URL + 'api/v1/panel'
+
+INTEGRATIONS_URL = BASE_URL + 'integrations/v1/devices/'
 
 
 def get_panel_mode_url(area, mode):
@@ -119,6 +123,9 @@ STATUS_ON_INT = 1
 STATUS_OFF = 'Off'
 STATUS_OFF_INT = 0
 
+COLOR_MODE_ON = 0
+COLOR_MODE_OFF = 2
+
 AUTOMATION_TYPE_MANUAL = 'manual'
 AUTOMATION_TYPE_LOCATION = 'location'
 AUTOMATION_TYPE_SCHEDULE = 'schedule'
@@ -142,6 +149,7 @@ TYPE_OPENING = "door"
 TYPE_QUICK_ACTION = "quick_action"
 TYPE_SENSOR = "sensor"
 TYPE_SWITCH = "switch"
+TYPE_VALVE = "valve"
 
 TYPE_UNKNOWN_SENSOR = "unknown_sensor"
 
@@ -190,6 +198,9 @@ DEVICE_NIGHT_SWITCH = 'device_type.night_switch'
 DEVICE_POWER_SWITCH_SENSOR = 'device_type.power_switch_sensor'
 DEVICE_POWER_SWITCH_METER = 'device_type.power_switch_meter'
 
+# Water Valve
+DEVICE_VALVE = 'device_type.valve'
+
 # Unknown Sensor
 # These device types are all considered 'occupancy' but could apparently
 # also be multi-sensors based on their json.
@@ -211,13 +222,10 @@ UNIT_PERCENT = '%'
 UNIT_LUX = 'lx'
 LUX = 'lux'
 
+BRIGHTNESS_KEY = 'statusEx'
 # This is a guess currently
 MOTION_STATUS_KEY = 'motion_event'
 OCCUPANCY_STATUS_KEY = 'motion_event'
-
-# More guesses!
-COLOR_KEY = 'color_status'
-BRIGHTNESS_KEY = 'statusEx'
 
 
 def get_generic_type(type_tag):
@@ -261,6 +269,9 @@ def get_generic_type(type_tag):
         DEVICE_NIGHT_SWITCH: TYPE_SWITCH,
         DEVICE_POWER_SWITCH_SENSOR: TYPE_SWITCH,
         DEVICE_POWER_SWITCH_METER: TYPE_SWITCH,
+
+        # Water Valve
+        DEVICE_VALVE: TYPE_VALVE,
 
         # Unknown Sensors
         # More data needed to determine type
